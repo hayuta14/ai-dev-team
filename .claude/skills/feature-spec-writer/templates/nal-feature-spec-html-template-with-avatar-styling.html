@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}} · Feature Spec</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700;9..144,900&family=JetBrains+Mono:wght@400;500;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0d0d0d; --paper: #f4f1ea; --paper-2: #ebe6db; --paper-3: #e2dccf;
+  --accent: #d94f1e; --accent-2: #1e5fd9; --green: #2d6e3e;
+  --amber: #b8860b; --red: #c0392b; --muted: #6b6b6b; --line: #2a2a2a;
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Be Vietnam Pro', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-body); background: var(--paper); color: var(--ink); line-height: 1.7; font-size: 15px; }
+
+.hero { padding: 60px 50px 40px; border-bottom: 2px solid var(--ink); }
+.hero-meta { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 24px; }
+.hero h1 { font-family: var(--font-display); font-size: clamp(44px, 8vw, 92px); font-weight: 900; line-height: 0.9; letter-spacing: -0.03em; margin-bottom: 16px; }
+.hero h1 em { font-style: italic; font-weight: 400; color: var(--accent); }
+.hero-sub { max-width: 780px; font-size: 17px; color: #2a2a2a; margin-bottom: 12px; }
+
+.meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; max-width: 980px; margin-top: 24px; padding: 16px; background: var(--paper-2); border-left: 4px solid var(--accent-2); }
+.meta-grid .item { font-size: 13px; }
+.meta-grid .label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.meta-grid .value { font-weight: 600; }
+
+.section { padding: 40px 50px; border-bottom: 1px solid var(--paper-3); max-width: 1100px; }
+.section-num { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+.section h2 { font-family: var(--font-display); font-size: 36px; font-weight: 700; line-height: 1.1; margin-bottom: 20px; }
+.section h2 em { font-style: italic; font-weight: 400; color: var(--accent-2); }
+.section h3 { font-family: var(--font-body); font-size: 18px; font-weight: 700; margin-top: 24px; margin-bottom: 10px; }
+.section p { margin-bottom: 12px; }
+.section ul, .section ol { margin: 12px 0 16px 24px; }
+.section li { margin-bottom: 6px; }
+.section code { font-family: var(--font-mono); font-size: 13px; background: var(--paper-2); padding: 2px 6px; border-radius: 3px; }
+
+.diagram { font-family: var(--font-mono); font-size: 13px; background: var(--paper-2); border-left: 4px solid var(--accent); padding: 16px; margin: 16px 0; white-space: pre; overflow-x: auto; }
+
+.callout { padding: 16px 20px; margin: 16px 0; border-left: 4px solid var(--amber); background: rgba(184, 134, 11, 0.08); }
+.callout.warn { border-left-color: var(--red); background: rgba(192, 57, 43, 0.08); }
+.callout.ok { border-left-color: var(--green); background: rgba(45, 110, 62, 0.08); }
+.callout strong { font-weight: 700; }
+
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--paper-3); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; background: var(--paper-2); border-bottom: 2px solid var(--ink); }
+tr:hover { background: rgba(217, 79, 30, 0.04); }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-family: var(--font-mono); text-transform: uppercase; font-weight: 600; }
+.badge.high { background: rgba(192, 57, 43, 0.15); color: var(--red); }
+.badge.med { background: rgba(184, 134, 11, 0.15); color: var(--amber); }
+.badge.low { background: rgba(45, 110, 62, 0.15); color: var(--green); }
+.badge.recommended { background: var(--accent); color: white; }
+
+.checklist { list-style: none; margin-left: 0; }
+.checklist li { padding-left: 28px; position: relative; margin-bottom: 8px; }
+.checklist li::before { content: "☐"; position: absolute; left: 0; top: 0; font-size: 18px; color: var(--accent-2); }
+
+.footer { padding: 30px 50px; border-top: 2px solid var(--ink); font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-meta">SPEC · {{DATE}} · {{VERSION}}</div>
+  <h1>{{TITLE}}<br><em>specification</em></h1>
+  <p class="hero-sub">{{ELEVATOR_PITCH}}</p>
+  <div class="meta-grid">
+    <div class="item"><div class="label">Tác giả</div><div class="value">{{AUTHOR}}</div></div>
+    <div class="item"><div class="label">Trạng thái</div><div class="value">{{STATUS}}</div></div>
+    <div class="item"><div class="label">Target users</div><div class="value">{{TARGET_USERS}}</div></div>
+    <div class="item"><div class="label">Deadline</div><div class="value">{{DEADLINE}}</div></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-num">— 1 · OVERVIEW</div>
+  <h2>Tổng quan</h2>
+  {{OVERVIEW_HTML}}
+</section>
+
+<section class="section">
+  <div class="section-num">— 2 · SCOPE</div>
+  <h2>Phạm vi <em>(in / out)</em></h2>
+  <h3>Trong phạm vi</h3>
+  <ul>{{IN_SCOPE_ITEMS}}</ul>
+  <h3>Ngoài phạm vi (lần này không làm)</h3>
+  <ul>{{OUT_OF_SCOPE_ITEMS}}</ul>
+</section>
+
+<section class="section">
+  <div class="section-num">— 3 · ACCEPTANCE CRITERIA</div>
+  <h2>Tiêu chí nghiệm thu</h2>
+  <p>Mỗi tiêu chí phải kiểm chứng được (testable). Reviewer tick từng dòng khi PR sẵn sàng merge.</p>
+  <ul class="checklist">{{ACCEPTANCE_ITEMS}}</ul>
+</section>
+
+<section class="section">
+  <div class="section-num">— 4 · CONSTRAINTS</div>
+  <h2>Ràng buộc</h2>
+  <h3>Technical</h3>
+  <ul>{{CONSTRAINTS_TECHNICAL}}</ul>
+  <h3>Performance</h3>
+  <ul>{{CONSTRAINTS_PERFORMANCE}}</ul>
+  <h3>Business</h3>
+  <ul>{{CONSTRAINTS_BUSINESS}}</ul>
+  <h3>Compatibility</h3>
+  <ul>{{CONSTRAINTS_COMPATIBILITY}}</ul>
+</section>
+
+<section class="section">
+  <div class="section-num">— 5 · APPROACH</div>
+  <h2>Phương pháp tiếp cận</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Approach</th><th>Mô tả</th><th>Pros</th><th>Cons</th><th>Quyết định</th></tr></thead>
+      <tbody>{{APPROACHES_ROWS}}</tbody>
+    </table>
+  </div>
+  <div class="callout ok">
+    <strong>Khuyến nghị:</strong> {{RECOMMENDED_APPROACH_RATIONALE}}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-num">— 6 · RISKS</div>
+  <h2>Rủi ro <em>& giảm thiểu</em></h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Risk</th><th>Impact</th><th>Likelihood</th><th>Mitigation</th></tr></thead>
+      <tbody>{{RISKS_ROWS}}</tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-num">— 7 · OPEN QUESTIONS</div>
+  <h2>Câu hỏi chưa giải</h2>
+  <p>Phải có câu trả lời cho các câu này trước khi implement.</p>
+  <ol>{{OPEN_QUESTIONS_ITEMS}}</ol>
+</section>
+
+<footer class="footer">
+  <p>{{TITLE}} · NAL Vietnam · Generated {{DATE}} · Spec template v1.0</p>
+</footer>
+
+</body>
+</html>

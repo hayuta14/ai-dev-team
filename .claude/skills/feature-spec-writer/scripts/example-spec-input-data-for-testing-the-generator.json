@@ -1,0 +1,134 @@
+{
+  "title": "Vendor Payout Batching",
+  "elevator_pitch": "Gộp các payout vendor thành batch hàng tuần thay vì daily để giảm phí gateway 60% và đơn giản hóa reconciliation.",
+  "author": "@luke",
+  "status": "Draft",
+  "target_users": "Finance ops team + 1200 active vendors",
+  "deadline": "2026-06-15",
+  "version": "v0.1",
+  "overview_paragraphs": [
+    "Hiện tại hệ thống gửi payout hàng ngày cho mỗi vendor có balance > 100k VND, gây 4 vấn đề: (1) phí gateway 2k/transaction × 1200 vendor × 30 ngày = 72M/tháng, (2) finance ops phải reconcile 36000 dòng giao dịch/tháng, (3) vendor nhận tiền lắt nhắt khó kế toán, (4) áp lực lên DB vào 9:00 mỗi sáng.",
+    "Giải pháp đề xuất: gộp payout thành 1 batch/tuần vào sáng Thứ Hai. Vendor có balance < threshold tự dồn sang tuần sau. Vendor enterprise vẫn giữ option daily nếu trả phí cao hơn."
+  ],
+  "in_scope": [
+    "Job batch payout chạy hằng tuần (Mon 09:00 GMT+7)",
+    "Configurable threshold per vendor tier (Standard / Pro / Enterprise)",
+    "Email notification trước payout 24h + sau khi xong",
+    "Dashboard finance ops: xem batch upcoming + history",
+    "API GET /vendors/:id/payout-schedule cho vendor self-service"
+  ],
+  "out_of_scope": [
+    "Mobile app integration (giai đoạn 2)",
+    "Vendor-initiated instant payout (giai đoạn 2, có thể charge phí)",
+    "Multi-currency (chỉ VND lần này)",
+    "Tax withholding automation"
+  ],
+  "acceptance_criteria": [
+    "Job chạy đúng schedule Mon 09:00 GMT+7, không miss tuần nào trong 4 tuần test",
+    "Batch xử lý 10k vendor < 30 giây",
+    "Phí gateway thực tế giảm ≥ 50% sau 1 tháng",
+    "0 trường hợp double-payout trong test environment 100 chu kỳ",
+    "Email notification deliver rate ≥ 98% (qua SES bounce report)",
+    "Dashboard finance ops hiển thị đúng số sau batch, lệch ≤ 0.01 VND",
+    "API self-service trả về schedule + estimated amount trong < 200ms p95"
+  ],
+  "constraints": {
+    "technical": [
+      "Node.js 20+ (đã chuẩn của API service)",
+      "Prisma 5.x cho DB transaction",
+      "BullMQ cho job queue (tận dụng Redis có sẵn)",
+      "Idempotent job — re-run cùng batchId không double-pay"
+    ],
+    "performance": [
+      "Batch 10k vendor xong trong < 30 giây",
+      "API /payout-schedule p95 < 200ms",
+      "Memory peak < 512MB per worker",
+      "Không impact API latency khác (DB connection pool tách)"
+    ],
+    "business": [
+      "Tuân thủ PDPD (Nghị định 13/2023/NĐ-CP) về thông báo trước khi xử lý tiền",
+      "Audit log đầy đủ — Sepay yêu cầu lưu 5 năm",
+      "Email template phải qua legal review trước launch"
+    ],
+    "compatibility": [
+      "Giữ POST /vendors/:id/payout-now cho daily mode legacy (Enterprise tier)",
+      "Migration path: vendor cũ tự động map sang Standard tier với weekly schedule",
+      "Webhook /payout-completed giữ format cũ (backward compat)"
+    ]
+  },
+  "approaches": [
+    {
+      "name": "Cron job đơn",
+      "description": "Đặt cron Mon 09:00, một process Node xử lý sequential từng vendor.",
+      "pros": ["Đơn giản, 0 dependency mới", "Dễ debug"],
+      "cons": [
+        "Sequential 10k vendor chậm (~5 phút)",
+        "Crash giữa chừng không resume được",
+        "Không có retry built-in"
+      ],
+      "decision": "rejected"
+    },
+    {
+      "name": "BullMQ queue + workers",
+      "description": "Master job tạo 10k child jobs đẩy vào BullMQ queue, 4 worker xử lý song song với retry, dead letter queue, observability dashboard.",
+      "pros": [
+        "Parallel xử lý, < 30s cho 10k vendor",
+        "Retry tự động + DLQ cho poison message",
+        "Tận dụng Redis có sẵn trong stack",
+        "Có Bull Board dashboard cho ops"
+      ],
+      "cons": [
+        "Cần config Redis cluster cho HA",
+        "Mỗi worker là 1 process — tăng memory baseline"
+      ],
+      "decision": "recommended"
+    },
+    {
+      "name": "Temporal workflow",
+      "description": "Dùng Temporal cho durable workflow execution với compensation logic built-in.",
+      "pros": [
+        "Strong durability guarantees",
+        "Compensation pattern cho rollback"
+      ],
+      "cons": [
+        "Adds Temporal cluster — operational overhead lớn",
+        "Team chưa quen, learning curve",
+        "Overkill cho use case này"
+      ],
+      "decision": "rejected"
+    }
+  ],
+  "recommended_approach_rationale": "BullMQ match với stack hiện tại (Redis đã có cho session cache), team đã quen pattern này từ email queue. Trade-off worker memory là chấp nhận được vì có thể scale horizontal khi vendor count tăng.",
+  "risks": [
+    {
+      "risk": "Job stuck bởi poison message (vendor data corrupt)",
+      "impact": "high",
+      "likelihood": "med",
+      "mitigation": "Dead letter queue + Slack alert cho finance ops + retry policy max 3 lần"
+    },
+    {
+      "risk": "Redis down trong lúc batch chạy",
+      "impact": "high",
+      "likelihood": "low",
+      "mitigation": "Redis Sentinel cho HA + idempotent job có thể re-run khi Redis recover"
+    },
+    {
+      "risk": "Vendor nhận email sai số tiền do race condition",
+      "impact": "med",
+      "likelihood": "med",
+      "mitigation": "Lock vendor.balance trong transaction Postgres SELECT FOR UPDATE trước khi send email"
+    },
+    {
+      "risk": "Finance ops không quen UI batch mới, miss cycle",
+      "impact": "low",
+      "likelihood": "high",
+      "mitigation": "Training session 2h + runbook + dual-mode 2 tuần đầu (cũ + mới song song)"
+    }
+  ],
+  "open_questions": [
+    "Threshold cho Standard tier nên là 100k hay 500k VND? (cần input từ Finance)",
+    "Có cho phép vendor opt-in daily mode trả thêm phí không? (cần đo demand)",
+    "Email template tiếng Anh hay tiếng Việt cho vendor quốc tế? (chỉ 12 vendor)",
+    "Có cần webhook riêng /batch-payout-completed cho external systems không?"
+  ]
+}

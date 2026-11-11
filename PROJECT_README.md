@@ -1,51 +1,44 @@
 # AI Dev Team: framework quản lý phát triển phần mềm đa agent
 
-Một repo mẫu cho Claude Code. Session chính đóng vai **Project Manager (PM)**, điều phối **7 subagent chuyên môn** (định nghĩa native trong `.claude/agents/`). Bạn là chủ dự án và là người ra quyết định cuối cùng.
+Một repo mẫu cho Claude Code. Session chính đóng vai **Project Manager (PM)**, điều phối **22 subagent chuyên môn** (định nghĩa native trong `.claude/agents/`) và dùng các skill trong `.claude/skills/`. Bạn là chủ dự án và là người ra quyết định cuối cùng.
 
 ## Cấu trúc
 
 ```
-.claude/agents/     7 subagent: business-analyst, solution-architect, database-architect,
-                    frontend-developer, backend-developer, qa-engineer, code-reviewer
+.claude/agents/      22 subagent (xem CLAUDE.md mục 1 để biết vai trò, model và skill của từng agent)
+.claude/skills/      40 skill dùng chung; mỗi agent preload hoặc đọc theo bảng "Skills per agent" trong CLAUDE.md
+.claude/workflows/   quy tắc dùng chung mà agent tham chiếu (development-rules, test-standards, git-flow, ...)
 .claude/settings.json   model mặc định của PM (sonnet) và các quy tắc ask/deny
-CLAUDE.md           luật điều phối của PM (workflow, routing model, các mốc cần duyệt)
-PROJECT_STATUS.md   backlog, trạng thái task, rủi ro, nhật ký agent (PM cập nhật)
-requirements/       do business-analyst viết
-docs/               do solution-architect viết (kiến trúc, API contract, ADR)
-database/           do database-architect viết (ERD, schema, migration, index)
-testing/            do qa-engineer viết (strategy, cases, report, bugs)
+CLAUDE.md            luật điều phối của PM (workflow, routing model, các mốc cần duyệt)
+PROJECT_STATUS.md    backlog, trạng thái task, rủi ro, nhật ký agent (PM cập nhật)
+plans/               kế hoạch và báo cáo của agent (tạo khi dùng lần đầu)
+requirements/, docs/, database/, testing/   tài liệu dự án (của bộ agent cũ; giữ lại nếu còn dùng)
 ```
+
+Nhóm agent: Explore (`brainstormer`, `scout`, `researcher`), Plan (`planner`, `debate-*`), Build (`fullstack-developer`, `ui-ux-designer`, `database-*`, `devops-engineer`), Verify (`tester`, `qa-reviewer`, `debugger`, `performance-engineer`), Review (`code-reviewer`, `security-auditor`), Deliver (`docs-manager`, `project-manager`, `git-manager`), Utility (`journal-writer`, `mcp-manager`).
 
 ## Dùng cho dự án mới
 
-1. Sao chép repo này thành dự án mới. Có thể bỏ thư mục `.git` để bắt đầu lịch sử mới:
-   `git clone C:\Users\admin\ai-dev-team D:\projects\my-app`
-   Nếu muốn áp vào **repo có sẵn**: chép `.claude/agents/`, `.claude/settings.json`, `CLAUDE.md` và `PROJECT_STATUS.md` vào đó. Nếu repo đã có `CLAUDE.md`, hãy gộp nội dung, đừng ghi đè. Các thư mục tài liệu sẽ được agent tạo khi cần.
-2. Mở thư mục đó bằng Claude Code (`claude` trong terminal, hoặc mở bằng VS Code). Gõ `/agents` để kiểm tra đủ 7 agent.
-3. Dán định nghĩa dự án, ví dụ:
-   > Dự án mới: hệ thống đặt lịch khám cho phòng khám nhỏ. Mục tiêu: … Người dùng: … Tính năng chính: … Ràng buộc: (ngân sách, công nghệ bắt buộc, deadline) … Hãy bắt đầu Phase 1.
-4. PM sẽ đi qua các phase:
-   khởi tạo → BA phân tích (**PM hỏi bạn các câu Blocking**) → kiến trúc + DB (**bạn duyệt ADR**) → lập backlog → dev → QA → review (**bạn duyệt nếu còn finding HIGH/CRITICAL**) → báo cáo bàn giao.
-5. Theo dõi tiến độ trong `PROJECT_STATUS.md`. Bạn có thể ra lệnh bất cứ lúc nào, ví dụ "chỉ làm requirements, dừng trước kiến trúc" hoặc "dùng opus cho review bảo mật".
+1. Sao chép repo này, hoặc áp vào repo có sẵn: chép `.claude/agents/`, `.claude/skills/`, `.claude/workflows/`, `.claude/settings.json`, `CLAUDE.md` và `PROJECT_STATUS.md`. Nếu repo đã có `CLAUDE.md`, hãy gộp nội dung, đừng ghi đè.
+2. Mở thư mục bằng Claude Code. Gõ `/agents` để kiểm tra đủ 22 agent.
+3. Dán định nghĩa dự án và yêu cầu PM bắt đầu.
+4. PM đi qua: khởi tạo → scout/researcher/brainstormer (**PM hỏi bạn các câu hỏi chặn**) → planner (**bạn duyệt plan**) → build → verify → review (**bạn duyệt nếu còn finding HIGH/CRITICAL**) → docs và báo cáo bàn giao.
+5. Theo dõi tiến độ trong `PROJECT_STATUS.md`.
 
 ## Gọi agent trực tiếp
 
-- "Dùng subagent business-analyst để phân tích yêu cầu sau…"
+- "Dùng subagent scout để tìm các file liên quan đến …"
 - `@agent-code-reviewer` (gõ `@` rồi chọn agent) để review các file vừa đổi.
 
 ## Model
 
-| Agent | Mặc định | Leo thang |
-|---|---|---|
-| PM (session chính) | sonnet | opus (`/model opus`) |
-| business-analyst, solution-architect, database-architect, frontend-developer, backend-developer, code-reviewer | sonnet | opus |
-| qa-engineer | haiku | sonnet |
-
-PM đổi model cho từng lần gọi bằng tham số `model` của Agent tool. Muốn đổi mặc định thì sửa dòng `model:` trong file agent tương ứng.
+Model mặc định nằm ở dòng `model:` trong từng file agent (opus cho brainstormer, planner, debugger, performance-engineer, qa-reviewer, security-auditor, ui-ux-designer, debate-skeptic; sonnet cho phần còn lại). PM đổi model cho từng lần gọi bằng tham số `model` của Agent tool; quy tắc nằm ở CLAUDE.md mục 5.
 
 ## An toàn
 
-- `code-reviewer` chỉ có Read/Grep/Glob, không sửa được file.
-- `database-architect` không có shell, nên không chạy được SQL vào DB thật.
+- Agent chỉ đọc (`scout`, `code-reviewer`, `database-optimizer`, `debugger`, ...) không sửa mã nguồn; chúng chỉ ghi file báo cáo.
+- `database-admin` mặc định read-only; lệnh phá huỷ luôn chờ người duyệt. `devops-engineer` chỉ chuẩn bị, chỉ chạy bước đã được duyệt.
+- `git-manager` không bao giờ push khi chưa được yêu cầu, không dùng `--no-verify`, và quét secret trước khi commit.
 - `git push`, `git reset --hard`, `git clean`, `rm -rf`, `npm publish`, `docker push` luôn hỏi bạn trước (`.claude/settings.json`). Agent không đọc được `.env` và `secrets/`.
-- Ranh giới file của từng agent (agent nào được ghi vào đâu) được ép bằng system prompt, **không** ép bằng quyền. Claude Code không giới hạn tool Write/Edit theo thư mục cho từng subagent. PM kiểm tra lại các file đã đổi trong báo cáo của agent.
+- Ranh giới file của từng agent được ép bằng system prompt, **không** ép bằng quyền. PM kiểm tra lại các file đã đổi trong báo cáo của agent.
+- Một số agent nhắc tới lệnh `/avatar:*`, hook và `.claude/active-plan` của pack gốc; repo này không có các thứ đó, PM làm các bước tương ứng bằng brief trực tiếp (CLAUDE.md mục 1).

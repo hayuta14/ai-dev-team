@@ -25,7 +25,7 @@
 ## Backlog
 | ID | Description | Agent | Depends on | Inputs | Expected output | Acceptance criteria | Priority | Status |
 |---|---|---|---|---|---|---|---|---|
-| T-001 | _example: analyze requirements_ | business-analyst | | project definition | requirements/* | no Blocking questions left unlisted | P0 | BACKLOG |
+| T-001 | _example: gather codebase evidence_ | scout | | project definition | plans/reports/scout-*.md | every fact cited with file:line | P0 | BACKLOG |
 
 ## Agent activity log
 | Date | Task | Agent (model) | Result summary | Verified by PM |

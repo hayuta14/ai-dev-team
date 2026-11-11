@@ -1,0 +1,7 @@
+# Dependencies
+# Python 3.9+ — chỉ dùng thư viện chuẩn (docker_optimize.py).
+#
+# CLI cần có tuỳ việc:
+#   - docker:  https://docs.docker.com/get-docker/
+#   - kubectl / helm / argocd: theo cụm Kubernetes của dự án
+#   - glab:    GitLab CLI cho git.nal.vn
